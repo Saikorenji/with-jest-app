@@ -7,8 +7,9 @@ export default function Calculator() {
     const [b, setB] = useState("");
     const [operator, setOperator] = useState("+");
     const [result, setResult] = useState<number | string>("");
+    const [history, setHistory] = useState<{ a: number; b: number; operator: string; result: number | string }[]>([]);
 
-    function calculate() {
+    async function calculate() {
         const numA = parseFloat(a);
         const numB = parseFloat(b);
         if (isNaN(numA) || isNaN(numB)) {
@@ -16,22 +17,37 @@ export default function Calculator() {
             return;
         }
 
+        let operationResult;
         switch (operator) {
             case '+':
-                setResult(numA + numB);
+                operationResult = numA + numB;
                 break;
             case '-':
-                setResult(numA - numB);
+                operationResult = numA - numB;
                 break;
             case '*':
-                setResult(numA * numB);
+                operationResult = numA * numB;
                 break;
             case '/':
-                setResult(numB !== 0 ? numA / numB : "Division par zéro non autorisée");
+                operationResult = numB !== 0 ? numA / numB : "Division par zéro non autorisée";
                 break;
             default:
-                setResult("Opérateur non supporté");
+                operationResult = "Opérateur non supporté";
         }
+
+        setResult(operationResult);
+
+        // Envoyer l'opération à l'API
+        await fetch("/api/history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ a: numA, b: numB, operator, result: operationResult }),
+        });
+
+        // Mettre à jour l'historique
+        fetch("/api/history")
+            .then(res => res.json())
+            .then(data => setHistory(data));
     }
 
     return (
@@ -46,6 +62,14 @@ export default function Calculator() {
             <input type="text" value={b} onChange={(e) => setB(e.target.value)} placeholder="Nombre B" />
             <button onClick={calculate}>Calculer</button>
             <h3 data-testid="result">Résultat : {result}</h3>
+            <h3>Historique :</h3>
+            <ul>
+                {history.map((entry, index) => (
+                    <li key={index}>
+                        {entry.a} {entry.operator} {entry.b} = {entry.result}
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }
