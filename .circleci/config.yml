@@ -48,14 +48,6 @@ jobs:
       - checkout
       - run: echo "Managing team members..."
 
-  # General deploy job
-  deploy:
-    executor: node/default
-    steps:
-      - checkout
-      - run: echo "Deploying..."
-    when: on_success
-
 workflows:
   version: 2
 
@@ -80,8 +72,5 @@ workflows:
               only:
                 - main
       - manage_members:
-          requires:
-            - unit_tests
-      - deploy:
           requires:
             - unit_tests
