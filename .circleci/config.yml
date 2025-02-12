@@ -47,6 +47,21 @@ jobs:
     steps:
       - checkout
       - run: echo "Managing team members..."
+      - run:
+          name: Assign roles to team members
+          command: |
+            echo "Assigning roles via CircleCI API..."
+            curl -X POST https://circleci.com/api/v2/organization/{org_id}/member \
+            -H "Circle-Token: $CIRCLECI_API_TOKEN" \
+            -d '{"email": "newmember@example.com", "role": "developer"}'
+
+  # General deploy job
+  deploy:
+    executor: node/default
+    steps:
+      - checkout
+      - run: echo "Deploying..."
+    when: on_success
 
 workflows:
   version: 2
@@ -72,5 +87,8 @@ workflows:
               only:
                 - main
       - manage_members:
+          requires:
+            - unit_tests
+      - deploy:
           requires:
             - unit_tests
