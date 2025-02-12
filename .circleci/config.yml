@@ -3,6 +3,11 @@ version: 2.1
 orbs:
   node: circleci/node@5
 jobs:
+  build:
+    executor: node/default
+    steps:
+      - checkout
+      - run: echo "Building things..."
   deploy_dev:
     executor: node/default
     steps:
