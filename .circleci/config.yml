@@ -41,6 +41,13 @@ jobs:
       - checkout
       - run: echo "Deploying to production environment..."
 
+  # Job for managing team members
+  manage_members:
+    executor: node/default
+    steps:
+      - checkout
+      - run: echo "Managing team members..."
+
 workflows:
   version: 2
 
@@ -64,3 +71,6 @@ workflows:
             branches:
               only:
                 - main
+      - manage_members:
+          requires:
+            - unit_tests
