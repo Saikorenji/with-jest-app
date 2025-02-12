@@ -9,11 +9,6 @@ jobs:
     steps:
       - checkout
       - run: echo "Building things..."
-    build-other-things:
-    executor: node/default
-    steps:
-      - checkout
-      - run: echo "Building other things..."
   # Second job declared is for launching unit tests with Jest
   unit-tests:
     executor: node/default
@@ -35,7 +30,6 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - build-other-things
       - unit-tests:
           requires:
             - build
