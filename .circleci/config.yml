@@ -1,4 +1,5 @@
 version: 2.1
+
 orbs:
   node: circleci/node@5
 
@@ -7,29 +8,57 @@ jobs:
     executor: node/default
     steps:
       - checkout
-      - run: echo "Building things..."
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "package-lock.json" }}
+      - run: npm install
+      - save_cache:
+          key: node-modules-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run: echo "Build process completed."
+
+  lint:
+    executor: node/default
+    steps:
+      - checkout
+      - run: npm install
+      - run: npm run lint
 
   unit_tests:
     executor: node/default
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "package-lock.json" }}
       - run: npm install
-      - run: npm run test
+      - run: echo "Running unit tests..."
+      - run: npm run test --verbose
 
   deploy:
     executor: node/default
     steps:
       - checkout
-      - run: echo "Deploying..."
+      - run: echo "Deploying to production..."
+    filters:
+      branches:
+        only: main
 
 workflows:
   version: 2
   build-test-deploy:
     jobs:
       - build
-      - unit_tests:
+      - lint:
           requires:
             - build
+      - unit_tests:
+          requires:
+            - lint
       - deploy:
           requires:
             - unit_tests
+          filters:
+            branches:
+              only: main
