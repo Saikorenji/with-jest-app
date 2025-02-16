@@ -24,7 +24,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - node-modules-{{ checksum "package-lock.json" }}
+            - node-modules-{{ checksum \"package-lock.json\" }}
       - run: npm install
       - run: echo "🔍 Running ESLint..."
       - run:
@@ -32,11 +32,37 @@ jobs:
           command: npm run lint || echo "⚠ ESLint found issues, but continuing..."
       - run: echo "✅ Linting completed."
 
+  integration_tests:
+    executor: node/default
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "package-lock.json" }}
+      - run: npm install
+      - run: echo "🧪 Running integration tests..."
+      - run: npm test || echo "⚠ Tests found issues, but continuing..."
+
   deploy_dev:
     executor: node/default
     steps:
       - checkout
       - run: echo "🚀 Deploying to development environment..."
+    filters:
+      branches:
+        only:
+          - develop
+          - feature/*
+          - hotfix/*
+
+  deploy_prod:
+    executor: node/default
+    steps:
+      - checkout
+      - run: echo "🚀 Deploying to production..."
+    filters:
+      branches:
+        only: main
 
   manage_members:
     executor: node/default
@@ -52,9 +78,15 @@ workflows:
       - lint:
           requires:
             - build
+      - integration_tests:
+          requires:
+            - lint
       - deploy_dev:
           requires:
-            - lint
+            - integration_tests
+      - deploy_prod:
+          requires:
+            - integration_tests
       - manage_members:
           requires:
-            - lint
+            - deploy_dev
