@@ -1,29 +1,71 @@
-{
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "test": "jest",
-    "test:ci": "jest --ci"
-  },
-  "dependencies": {
-    "next": "latest",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "server-only": "^0.0.1"
-  },
-  "devDependencies": {
-    "@testing-library/jest-dom": "6.1.5",
-    "@testing-library/react": "14.1.2",
-    "@types/jest": "29.5.11",
-    "@types/react": "18.2.45",
-    "jest": "29.7.0",
-    "jest-environment-jsdom": "29.7.0",
-    "node-mocks-http": "^1.16.2",
-    "typescript": "5.3.3",
-    "eslint": "^8.51.0",
-    "eslint-config-next": "latest"
-  }
-}
+version: 2.1
+
+orbs:
+  node: circleci/node@5
+
+jobs:
+  build:
+    executor: node/default
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "package-lock.json" }}
+      - run: npm install
+      - save_cache:
+          key: node-modules-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run: echo "✅ Build process completed."
+
+  lint:
+    executor: node/default
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "package-lock.json" }}
+      - run: npm install
+      - run: echo "🔍 Running ESLint..."
+      - run: npm run lint
+
+  unit_tests:
+    executor: node/default
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "package-lock.json" }}
+      - run: npm install
+      - run: echo "🧪 Running Jest tests..."
+      - run: npm run test --ci
+
+  deploy_dev:
+    executor: node/default
+    steps:
+      - checkout
+      - run: echo "🚀 Deploying to development environment..."
+
+  manage_members:
+    executor: node/default
+    steps:
+      - checkout
+      - run: echo "👥 Managing members process started..."
+
+workflows:
+  version: 2
+  build-test-deploy:
+    jobs:
+      - build
+      - lint:
+          requires:
+            - build
+      - unit_tests:
+          requires:
+            - lint
+      - deploy_dev:
+          requires:
+            - unit_tests
+      - manage_members:
+          requires:
+            - unit_tests
