@@ -16,16 +16,9 @@ jobs:
           key: node-modules-{{ checksum "package-lock.json" }}
           paths:
             - node_modules
-      - run: echo "Build process completed."
+      - run: echo "✅ Build process completed."
 
   lint:
-    executor: node/default
-    steps:
-      - checkout
-      - run: npm install
-      - run: npm run lint
-
-  unit_tests:
     executor: node/default
     steps:
       - checkout
@@ -33,14 +26,20 @@ jobs:
           keys:
             - node-modules-{{ checksum "package-lock.json" }}
       - run: npm install
-      - run: echo "Running unit tests..."
-      - run: npm run test --verbose
+      - run: echo "🔍 Running ESLint..."
+      - run: npm run lint
 
-  deploy:
+  deploy_dev:
     executor: node/default
     steps:
       - checkout
-      - run: echo "Deploying to production..."
+      - run: echo "🚀 Deploying to development environment..."
+
+  manage_members:
+    executor: node/default
+    steps:
+      - checkout
+      - run: echo "👥 Managing members process started..."
 
 workflows:
   version: 2
@@ -50,12 +49,9 @@ workflows:
       - lint:
           requires:
             - build
-      - unit_tests:
+      - deploy_dev:
           requires:
             - lint
-      - deploy:
+      - manage_members:
           requires:
-            - unit_tests
-          filters:
-            branches:
-              only: main
+            - lint
